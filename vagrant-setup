@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+
+update_apt() {
+  sudo apt-get update > /dev/null
+}
+
+install_with_apt() {
+  update_apt
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -y install $1
+}
+
+installed_with_apt() {
+  sudo dpkg -s $1 > /dev/null
+}
+
+new_install_with_apt() {
+  if installed_with_apt $1; then
+    echo "$1 is already installed"
+  else
+    install_with_apt $1
+  fi
+}
+
+write_file() {
+  sudo cat > $1
+}
+
+download_to_file() {
+  if [ -f $2 ]; then
+    echo "skipping download, the file already exists"
+  else
+    curl $1 > $2
+  fi
+}
+
+# Install APT utilities
+new_install_with_apt "python-software-properties"
+
+# Install tools to compile software
+new_install_with_apt "build-essential"
+
+# Create directory for downloads
+mkdir -p /home/vagrant/downloads
+
+# Create directory for local installs
+mkdir -p /home/vagrant/local
+chown -R vagrant:vagrant /home/vagrant/local
+
+# Install various utilities
+new_install_with_apt "git-core"
+new_install_with_apt "ack-grep"
+new_install_with_apt "curl"
+
+# Setup vim if required
+if installed_with_apt "vim"; then
+  echo "vim is already installed"
+else
+  install_with_apt "vim"
+  echo "EDITOR=\"vim\"" >> /home/vagrant/.profile
+fi
+
+# Install Ruby 1.9.3 if it is not already present
+if [ -d "/home/vagrant/local/ruby-1.9.3-p194" ]; then
+  echo "ruby-1.9.3-p194 is already installed"
+else
+  install_with_apt "libyaml-dev libssl-dev zlib1g-dev libreadline-dev openssl libsqlite3-0 libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev autoconf libc6-dev ncurses-dev automake libtool bison libffi-dev"
+  download_to_file "http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.3-p194.tar.gz" "/home/vagrant/downloads/ruby-1.9.3-p194.tar.gz"
+  cd /home/vagrant/downloads
+  tar xvzf ruby-1.9.3-p194.tar.gz
+  cd ruby-1.9.3-p194 && ./configure --prefix=/home/vagrant/local/ruby-1.9.3-p194 && make && make install
+  cd /home/vagrant/local
+  ln -s ruby-1.9.3-p194 ruby
+  chown -R vagrant:vagrant ruby-1.9.3-p194
+  chown -R vagrant:vagrant ruby
+  echo "PATH=\"/home/vagrant/local/ruby/bin:\$PATH\"" >> /home/vagrant/.profile
+
+  source /home/vagrant/.profile
+  gem install bundler rubygems-bundler
+fi
+
+# Install ImageMagick
+# new_install_with_apt "libmagick++-dev"
+# new_install_with_apt "imagemagick"
+
+# Install Xvfb (a fake X environment for testing purposes)
+# new_install_with_apt "xvfb"
+
+# Install the libraries needed to use Capybara with webkit
+# new_install_with_apt "libqt4-dev"
+# new_install_with_apt "libwebkit-dev"
+
+# # Install MongoDB
+# if installed_with_apt "mongodb-10gen"; then
+#   echo "MongoDB is already installed"
+# else
+#   sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
+#   echo >> /etc/apt/sources.list
+#   echo "# MongoDB" >> /etc/apt/sources.list
+#   echo "deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen" >> /etc/apt/sources.list
+#   
+#   install_with_apt "mongodb-10gen"
+# fi
+
+# # Install nginx
+# if installed_with_apt "nginx"; then
+#   echo "Nginx is already installed"
+# else
+#   install_with_apt "nginx"
+#   
+#   write_file "/etc/nginx/sites-available/yoursite" <<EOF
+# your config file content here
+# EOF
+# 
+#   cd /etc/nginx/sites-enabled
+#   rm default
+#   sudo ln -s /etc/nginx/sites-available/yoursite yoursite
+#   sudo service nginx restart
+# fi
+
+# Install postfix (not needed at this time because we use Sendgrid)
+new_install_with_apt "postfix"
+
+# # Install MySQL
+# new_install_with_apt "mysql-server"
+# new_install_with_apt "libmysqlclient-dev"
