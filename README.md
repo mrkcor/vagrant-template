@@ -5,7 +5,7 @@ This is a very simple template to get you starting with [Vagrant](http://vagrant
 To use this template simply copy the Vagrantfile and vagrant-setup.sh files to where you want to setup Vagrant (the root of your project, or some directory above it). Then edit vagrant-setup.sh to make any desired modifcations. vagrant-setup.sh contains a couple of helpful bash functions and commented out examples that should make it easy enough to get you going.
 
 # License
-Highway is released under the MIT license.
+This vagrant template is released under the MIT license.
 
 # Author
-Mark Kremer
+Mark Cornelissen
